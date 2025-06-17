@@ -109,14 +109,25 @@ func (c *Checker) checkSelectExpr(e *expr.Expr) (err error) {
 	switch operandType.GetTypeKind().(type) {
 	case *expr.Type_MapType_:
 		return c.setType(e, operandType.GetMapType().GetValueType())
+	case *expr.Type_ListType_:
+		return c.checkListType(e, operandType.GetListType().GetElemType(), selectExpr.Field)
 	case *expr.Type_MessageType:
-		return c.resolveMessageType(e, operandType.GetMessageType(), selectExpr.Field)
+		return c.checkMessageType(e, operandType.GetMessageType(), selectExpr.Field)
 	default:
-		return c.errorf(e, "unsupported operand type")
+		return c.errorf(e, "unsupported operand type '%v'", operandType.GetTypeKind())
 	}
 }
 
-func (c *Checker) resolveMessageType(e *expr.Expr, name string, field string) error {
+func (c *Checker) checkListType(e *expr.Expr, elemType *expr.Type, field string) error {
+	switch elemType.GetTypeKind().(type) {
+	case *expr.Type_MessageType:
+		return c.checkMessageType(e, elemType.GetMessageType(), field)
+	default:
+		return c.errorf(e, "unsupported operand type '%v'", elemType.GetTypeKind())
+	}
+}
+
+func (c *Checker) checkMessageType(e *expr.Expr, name string, field string) error {
 	messageType, err := c.declarations.LookupMessageType(name)
 
 	if err != nil {

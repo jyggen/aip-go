@@ -431,7 +431,6 @@ func TestChecker(t *testing.T) {
 			filter:        "invalid = foo\xa0\x01bar",
 			errorContains: "invalid UTF-8",
 		},
-
 		{
 			filter: `message`,
 			declarations: []DeclarationOption{
@@ -513,6 +512,20 @@ func TestChecker(t *testing.T) {
 				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
 			},
 			errorContains: "primitive:STRING primitive:INT64",
+		},
+		{
+			filter: `message.repeated_message.string:"string"`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+		},
+		{
+			filter: `message.repeated_message.message.string:"string"`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
 		},
 	} {
 		tt := tt
