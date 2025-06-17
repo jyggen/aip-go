@@ -499,6 +499,21 @@ func TestChecker(t *testing.T) {
 				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
 			},
 		},
+		{
+			filter: `message.repeated_string:"foobar"`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+		},
+		{
+			filter: `message.repeated_string:1`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+			errorContains: "primitive:STRING primitive:INT64",
+		},
 	} {
 		tt := tt
 		t.Run(tt.filter, func(t *testing.T) {

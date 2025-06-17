@@ -129,18 +129,36 @@ func (c *Checker) resolveMessageType(e *expr.Expr, name string, field string) er
 		return c.errorf(e, "undeclared field '%s'", field)
 	}
 
+	f.IsList()
+
 	switch f.Kind() {
 	case protoreflect.BoolKind:
+		if f.IsList() {
+			return c.setType(e, TypeList(TypeBool))
+		}
+
 		return c.setType(e, TypeBool)
 	case protoreflect.DoubleKind:
+		if f.IsList() {
+			return c.setType(e, TypeList(TypeFloat))
+		}
+
 		return c.setType(e, TypeFloat)
 	case protoreflect.Int64Kind:
+		if f.IsList() {
+			return c.setType(e, TypeList(TypeInt))
+		}
+
 		return c.setType(e, TypeInt)
 	case protoreflect.MessageKind:
 		childMessageType, err := c.declarations.LookupMessageType(string(f.Message().FullName()))
 
 		if err != nil {
 			return err
+		}
+
+		if f.IsList() {
+			return c.setType(e, TypeList(TypeMessage(childMessageType)))
 		}
 
 		return c.setType(e, TypeMessage(childMessageType))
