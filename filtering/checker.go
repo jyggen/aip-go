@@ -2,6 +2,7 @@ package filtering
 
 import (
 	"fmt"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"time"
 
 	expr "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
@@ -108,8 +109,45 @@ func (c *Checker) checkSelectExpr(e *expr.Expr) (err error) {
 	switch operandType.GetTypeKind().(type) {
 	case *expr.Type_MapType_:
 		return c.setType(e, operandType.GetMapType().GetValueType())
+	case *expr.Type_MessageType:
+		return c.resolveMessageType(e, operandType.GetMessageType(), selectExpr.Field)
 	default:
 		return c.errorf(e, "unsupported operand type")
+	}
+}
+
+func (c *Checker) resolveMessageType(e *expr.Expr, name string, field string) error {
+	messageType, err := c.declarations.LookupMessageType(name)
+
+	if err != nil {
+		return err
+	}
+
+	f := messageType.Descriptor().Fields().ByName(protoreflect.Name(field))
+
+	if f == nil {
+		return c.errorf(e, "undeclared field '%s'", field)
+	}
+
+	switch f.Kind() {
+	case protoreflect.BoolKind:
+		return c.setType(e, TypeBool)
+	case protoreflect.DoubleKind:
+		return c.setType(e, TypeFloat)
+	case protoreflect.Int64Kind:
+		return c.setType(e, TypeInt)
+	case protoreflect.MessageKind:
+		childMessageType, err := c.declarations.LookupMessageType(string(f.Message().FullName()))
+
+		if err != nil {
+			return err
+		}
+
+		return c.setType(e, TypeMessage(childMessageType))
+	case protoreflect.StringKind:
+		return c.setType(e, TypeBool)
+	default:
+		return c.errorf(e, "unsupported kind '%v' for field '%s'", f.Kind(), f.FullName())
 	}
 }
 

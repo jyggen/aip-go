@@ -431,6 +431,59 @@ func TestChecker(t *testing.T) {
 			filter:        "invalid = foo\xa0\x01bar",
 			errorContains: "invalid UTF-8",
 		},
+
+		{
+			filter: `message`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+			errorContains: "non-bool result type",
+		},
+		{
+			filter: `message.bool`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+		},
+		{
+			filter: `message.double = 1.0`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+		},
+		{
+			filter: `message.double = "foobar"`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+			errorContains: "primitive:DOUBLE primitive:STRING",
+		},
+		{
+			filter: `message.int64 = 1`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+		},
+		{
+			filter: `message.int64 = "foobar"`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+			errorContains: "primitive:INT64 primitive:STRING",
+		},
+		{
+			filter: `message.message.bool`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+		},
 	} {
 		tt := tt
 		t.Run(tt.filter, func(t *testing.T) {

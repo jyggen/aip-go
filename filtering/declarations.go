@@ -2,6 +2,7 @@ package filtering
 
 import (
 	"fmt"
+	"google.golang.org/protobuf/reflect/protoregistry"
 
 	expr "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
 	"google.golang.org/protobuf/proto"
@@ -68,6 +69,7 @@ type Declarations struct {
 	idents    map[string]*expr.Decl
 	functions map[string]*expr.Decl
 	enums     map[string]protoreflect.EnumType
+	messages  *protoregistry.Types
 }
 
 // DeclarationOption configures Declarations.
@@ -105,12 +107,25 @@ func DeclareEnumIdent(name string, enumType protoreflect.EnumType) DeclarationOp
 	}
 }
 
+func DeclareMessageType(messageType protoreflect.MessageType) DeclarationOption {
+	return func(declarations *Declarations) error {
+		return declarations.declareMessageType(messageType)
+	}
+}
+
+func DeclareMessageIdent(name string, messageType protoreflect.MessageType) DeclarationOption {
+	return func(declarations *Declarations) error {
+		return declarations.declareMessageIdent(name, messageType)
+	}
+}
+
 // NewDeclarations creates a new set of Declarations for filter expression type-checking.
 func NewDeclarations(opts ...DeclarationOption) (*Declarations, error) {
 	d := &Declarations{
 		idents:    make(map[string]*expr.Decl),
 		functions: make(map[string]*expr.Decl),
 		enums:     make(map[string]protoreflect.EnumType),
+		messages:  new(protoregistry.Types),
 	}
 	for _, opt := range opts {
 		if err := opt(d); err != nil {
@@ -133,6 +148,10 @@ func (d *Declarations) LookupFunction(name string) (*expr.Decl, bool) {
 func (d *Declarations) LookupEnumIdent(name string) (protoreflect.EnumType, bool) {
 	result, ok := d.enums[name]
 	return result, ok
+}
+
+func (d *Declarations) LookupMessageType(name string) (protoreflect.MessageType, error) {
+	return d.messages.FindMessageByName(protoreflect.FullName(name))
 }
 
 func (d *Declarations) declareIdent(name string, t *expr.Type) error {
@@ -183,6 +202,18 @@ func (d *Declarations) declareEnumIdent(name string, enumType protoreflect.EnumT
 		}
 	}
 	return nil
+}
+
+func (d *Declarations) declareMessageType(messageType protoreflect.MessageType) error {
+	return d.messages.RegisterMessage(messageType)
+}
+
+func (d *Declarations) declareMessageIdent(name string, messageType protoreflect.MessageType) error {
+	if err := d.declareMessageType(messageType); err != nil {
+		return err
+	}
+
+	return d.declareIdent(name, TypeMessage(messageType))
 }
 
 func (d *Declarations) declareFunction(name string, overloads ...*expr.Decl_FunctionDecl_Overload) error {
