@@ -129,8 +129,6 @@ func (c *Checker) resolveMessageType(e *expr.Expr, name string, field string) er
 		return c.errorf(e, "undeclared field '%s'", field)
 	}
 
-	f.IsList()
-
 	switch f.Kind() {
 	case protoreflect.BoolKind:
 		if f.IsList() {
