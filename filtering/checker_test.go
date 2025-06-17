@@ -478,6 +478,21 @@ func TestChecker(t *testing.T) {
 			errorContains: "primitive:INT64 primitive:STRING",
 		},
 		{
+			filter: `message.string = "foobar"`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+		},
+		{
+			filter: `message.string = 1`,
+			declarations: []DeclarationOption{
+				DeclareStandardFunctions(),
+				DeclareMessageIdent("message", (&syntaxv1.Message{}).ProtoReflect().Type()),
+			},
+			errorContains: "primitive:STRING primitive:INT64",
+		},
+		{
 			filter: `message.message.bool`,
 			declarations: []DeclarationOption{
 				DeclareStandardFunctions(),

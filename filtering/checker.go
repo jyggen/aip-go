@@ -145,7 +145,7 @@ func (c *Checker) resolveMessageType(e *expr.Expr, name string, field string) er
 
 		return c.setType(e, TypeMessage(childMessageType))
 	case protoreflect.StringKind:
-		return c.setType(e, TypeBool)
+		return c.setType(e, TypeString)
 	default:
 		return c.errorf(e, "unsupported kind '%v' for field '%s'", f.Kind(), f.FullName())
 	}
